@@ -60,7 +60,7 @@ namespace cv {
 //! @{
 
 // MakeVec
-
+typedef unsigned long ulong;
 template<typename T, int CN> struct MakeVec;
 
 #define CV_CUDEV_MAKE_VEC_INST(elem_type) \
@@ -78,6 +78,17 @@ CV_CUDEV_MAKE_VEC_INST(float)
 CV_CUDEV_MAKE_VEC_INST(double)
 CV_CUDEV_MAKE_VEC_INST(long)
 CV_CUDEV_MAKE_VEC_INST(ulong)
+
+#define CV_CUDEV_MAKE_VEC_64_INST(elem_type, cuda_type) \
+    template<> struct MakeVec<elem_type, 1> { typedef elem_type type; }; \
+    template<> struct MakeVec<elem_type, 2> { typedef cuda_type ## 2 type; }; \
+    template<> struct MakeVec<elem_type, 3> { typedef cuda_type ## 3 type; }; \
+    template<> struct MakeVec<elem_type, 4> { typedef cuda_type ## 4 type; };
+
+CV_CUDEV_MAKE_VEC_64_INST(int64_t, longlong)
+CV_CUDEV_MAKE_VEC_64_INST(uint64_t, ulonglong)
+
+#undef CV_CUDEV_MAKE_VEC_64_INST
 
 #undef CV_CUDEV_MAKE_VEC_INST
 
@@ -148,6 +159,53 @@ CV_CUDEV_VEC_TRAITS_INST(long)
 CV_CUDEV_VEC_TRAITS_INST(ulong)
 
 #undef CV_CUDEV_VEC_TRAITS_INST
+
+#define CV_CUDEV_VEC_TRAITS_64_INST(scalar_type, cuda_type) \
+    template<> struct VecTraits<scalar_type> \
+    { \
+        typedef scalar_type elem_type; \
+        enum {cn=1}; \
+        __host__ __device__ __forceinline__ static scalar_type all(scalar_type v) {return v;} \
+        __host__ __device__ __forceinline__ static scalar_type make(scalar_type x) {return x;} \
+        __host__ __device__ __forceinline__ static scalar_type make(const scalar_type* v) {return *v;} \
+    }; \
+    template<> struct VecTraits<cuda_type ## 1> \
+    { \
+        typedef scalar_type elem_type; \
+        enum {cn=1}; \
+        __host__ __device__ __forceinline__ static cuda_type ## 1 all(scalar_type v) {return make_ ## cuda_type ## 1(v);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 1 make(scalar_type x) {return make_ ## cuda_type ## 1(x);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 1 make(const scalar_type* v) {return make_ ## cuda_type ## 1(*v);} \
+    }; \
+    template<> struct VecTraits<cuda_type ## 2> \
+    { \
+        typedef scalar_type elem_type; \
+        enum {cn=2}; \
+        __host__ __device__ __forceinline__ static cuda_type ## 2 all(scalar_type v) {return make_ ## cuda_type ## 2(v, v);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 2 make(scalar_type x, scalar_type y) {return make_ ## cuda_type ## 2(x, y);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 2 make(const scalar_type* v) {return make_ ## cuda_type ## 2(v[0], v[1]);} \
+    }; \
+    template<> struct VecTraits<cuda_type ## 3> \
+    { \
+        typedef scalar_type elem_type; \
+        enum {cn=3}; \
+        __host__ __device__ __forceinline__ static cuda_type ## 3 all(scalar_type v) {return make_ ## cuda_type ## 3(v, v, v);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 3 make(scalar_type x, scalar_type y, scalar_type z) {return make_ ## cuda_type ## 3(x, y, z);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 3 make(const scalar_type* v) {return make_ ## cuda_type ## 3(v[0], v[1], v[2]);} \
+    }; \
+    template<> struct VecTraits<cuda_type ## 4> \
+    { \
+        typedef scalar_type elem_type; \
+        enum {cn=4}; \
+        __host__ __device__ __forceinline__ static cuda_type ## 4 all(scalar_type v) {return make_ ## cuda_type ## 4(v, v, v, v);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 4 make(scalar_type x, scalar_type y, scalar_type z, scalar_type w) {return make_ ## cuda_type ## 4(x, y, z, w);} \
+        __host__ __device__ __forceinline__ static cuda_type ## 4 make(const scalar_type* v) {return make_ ## cuda_type ## 4(v[0], v[1], v[2], v[3]);} \
+    };
+
+CV_CUDEV_VEC_TRAITS_64_INST(int64_t, longlong)
+CV_CUDEV_VEC_TRAITS_64_INST(uint64_t, ulonglong)
+
+#undef CV_CUDEV_VEC_TRAITS_64_INST
 
 template<> struct VecTraits<schar>
 {
